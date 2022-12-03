@@ -38,9 +38,9 @@ impl GameState for State {
     }
 }
 
-// Means we want to implement funcionality to State
+// impl means we want to implement funcionality to State
 impl State {
-    // again &mut self means must be allowed to change things,
+    // again &mut self means it must be allowed to change things,
     // means it can access data in its instance of State
     // with the Self keyword
     fn run_systems(&mut self) {    
