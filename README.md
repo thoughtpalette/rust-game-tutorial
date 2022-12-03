@@ -5,7 +5,8 @@ Rust Tutorial from /r/roguelikedev
 
 ### Helpful Commands
 - start project: `cargo run`
-- `println!`, anything with ! after is a macro
+- `println!`, anything with ! after is a procedural macro (vs derived macro)
+  - Procedural macros run like a function - they define a procedure, they just greatly reduce your typing.
 - if use cargo init, program is a cargo _crate_
 - useful cmds
  - `cargo`
@@ -46,13 +47,13 @@ class State implements GameState`
 - `&` means pass a reference | _pointer_ to the original value, if you change it, it will change the original
 -  `main` fn tells the Operating System where to start the program.
 - `RltkBuilder::simple80x50()` example of calling fn from inside of a struct, where that struct doesn't take a `self` function. 
+- "derive macros are a special type of macro that implements additional functionality for a structure on your behalf - saving lots of typing."
+- Any function that ends with a statement that lacks a semicolon treats that line as a return statement.
+- "A vector is like an array, which lets you put a bunch of data into a list and access each element. Unlike an array, a Vec doesn't have a size limit - and the size can change while the program runs. So you can push (add) new items, and remove them as you go."
 
 ### Updating Rust
 "you can type `rustup self update`. This updates the Rust update tools (I know that sounds rather recursive). You can then type `rustup update` and install the latest versions of all of the tools."
 
 ###  Acronyms
 - ECS - Entity Component System
-
-
-
-
+- POD - "Plain Old Data"
