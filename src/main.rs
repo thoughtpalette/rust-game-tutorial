@@ -1,5 +1,6 @@
 use rltk::{GameState, Rltk, RGB};
 use specs::prelude::*;
+use std::cmp::{max, min};
 
 mod components;
 pub use components::*;
@@ -7,8 +8,8 @@ mod map;
 pub use map::*;
 mod player;
 use player::*;
-// mod rect;
-// pub use rect::Rect;
+mod rect;
+pub use rect::Rect;
 
 pub struct State {
     pub ecs: World,
@@ -66,7 +67,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<Player>();
 
-    gs.ecs.insert(new_map());
+    gs.ecs.insert(new_map_rooms_and_coridoors());
 
     // This is the Player
     gs.ecs
