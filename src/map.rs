@@ -53,7 +53,7 @@ pub fn new_map_test() -> Vec<TileType> {
     map
 }
 
-pub fn new_map_rooms_and_coridoors() -> Vec<TileType> {
+pub fn new_map_rooms_and_coridoors() -> (Vec<Rect>, Vec<TileType>) {
     let mut map = vec![TileType::Wall; 80*50];
 
     let mut rooms: Vec<Rect> = Vec::new();
@@ -93,8 +93,8 @@ pub fn new_map_rooms_and_coridoors() -> Vec<TileType> {
     }
 
 
-    
-    map
+    // returning multiples here
+    (rooms, map)
 }
 
 pub fn apply_room_to_map(room: &Rect, map: &mut [TileType]) {
