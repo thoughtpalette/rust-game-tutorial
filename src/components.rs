@@ -2,8 +2,6 @@ use specs::prelude::*;
 use specs_derive::*;
 use rltk::{RGB};
 
-// #[derive(Component)] is a macro that says "from my basic data, please derive the boilerplate needed for x";
-// in this case, the x is a Component.
 #[derive(Component)]
 pub struct Position {
     pub x: i32,
@@ -19,3 +17,10 @@ pub struct Renderable {
 
 #[derive(Component, Debug)]
 pub struct Player {}
+
+#[derive(Component)]
+pub struct Viewshed {
+    pub visible_tiles : Vec<rltk::Point>,
+    pub range : i32,
+    pub dirty : bool
+}

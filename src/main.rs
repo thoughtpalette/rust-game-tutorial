@@ -1,7 +1,5 @@
 use rltk::{GameState, Rltk, RGB};
 use specs::prelude::*;
-use std::cmp::{max, min};
-
 mod components;
 pub use components::*;
 mod map;
@@ -10,25 +8,30 @@ mod player;
 use player::*;
 mod rect;
 pub use rect::Rect;
+mod visibility_system;
+use visibility_system::VisibilitySystem;
 
 pub struct State {
-    pub ecs: World,
+    pub ecs: World
+}
+
+impl State {
+    fn run_systems(&mut self) {
+        let mut vis = VisibilitySystem{};
+        vis.run_now(&self.ecs);
+        self.ecs.maintain();
+    }
 }
 
 impl GameState for State {
-    // Tick with each frame rendered
-    fn tick(&mut self, ctx: &mut Rltk) {
-        // cls = clear the screen
+    fn tick(&mut self, ctx : &mut Rltk) {
         ctx.cls();
 
         player_input(self, ctx);
         self.run_systems();
 
-        let map = self.ecs.fetch::<Vec<TileType>>();
-        draw_map(&map, ctx);
+        draw_map(&self.ecs, ctx);
 
-        // Print output at x, y coords
-        // ctx.print(1, 1, "Hello Rust World");
         let positions = self.ecs.read_storage::<Position>();
         let renderables = self.ecs.read_storage::<Renderable>();
 
@@ -38,41 +41,23 @@ impl GameState for State {
     }
 }
 
-// impl means we want to implement funcionality to State
-impl State {
-    // again &mut self means it must be allowed to change things,
-    // means it can access data in its instance of State
-    // with the Self keyword
-    fn run_systems(&mut self) {    
-        // tells Specs that if any changes were queued up by the systems,
-        // they should apply to the world now.
-        self.ecs.maintain();
-    }
-}
-
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
     let context = RltkBuilder::simple80x50()
         .with_title("Roguelike Tutorial")
         .build()?;
-
-    // Notice that World::new() is another constructor - it's a method inside the World type,
-    // but without a reference to self.
-    // So it doesn't work on existing World objects - it can only make new ones.
-    let mut gs = State { ecs: World::new() };
-
-    // What this does is it tells our World to take a look at the types we are giving it,
-    // and do some internal magic to create storage systems for each of them.
+    let mut gs = State {
+        ecs: World::new()
+    };
     gs.ecs.register::<Position>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<Player>();
+    gs.ecs.register::<Viewshed>();
 
-    let (rooms, map) = new_map_rooms_and_coridoors();
+    let map : Map = Map::new_map_rooms_and_corridors();
+    let (player_x, player_y) = map.rooms[0].center();
     gs.ecs.insert(map);
 
-    let (player_x, player_y) = rooms[0].center();
-
-    // This is the Player
     gs.ecs
         .create_entity()
         .with(Position { x: player_x, y: player_y })
@@ -81,7 +66,8 @@ fn main() -> rltk::BError {
             fg: RGB::named(rltk::YELLOW),
             bg: RGB::named(rltk::BLACK),
         })
-        .with(Player {})
+        .with(Player{})
+        .with(Viewshed{ visible_tiles : Vec::new(), range: 8, dirty: true })
         .build();
 
     rltk::main_loop(context, gs)

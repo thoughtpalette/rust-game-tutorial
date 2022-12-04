@@ -1,62 +1,21 @@
-use rltk::{ RGB, Rltk, RandomNumberGenerator };
+use rltk::{ RGB, Rltk, RandomNumberGenerator, BaseMap, Algorithm2D, Point };
 use super::{Rect};
 use std::cmp::{max, min};
-
-// Any function that ends with a statement that lack
-// a semicolon treats that line as a return statement.
-// ---
-// multiplies the y position by the map width (80), and adds x.
-// This guarantees one tile per location, and efficiently maps it
-// in memory for left-to-right reading.
-// pub fn xy_idx(x: i32, y: i32) -> usize {
-//     (y as usize * 80) + x as usize
-// }
-
-/// Makes a map with solid boundaries and 400 randomly placed walls. No guarantees that it won't
-pub fn new_map_test() -> Vec<TileType> {
-    // The first parameter is the value for each element of the new vector. In this case, we're setting every entry we create to be a Floor (from the TileType enumeration).
-    // The second parameter is how many tiles we should create. They will all be set to the value we set above.
-    // In this case, our map is 80x50 tiles (4,000 tiles - but we'll let the compiler do the math for us!). So we need to make 4,000 tiles.
-    let mut map = vec![TileType::Floor; 80 * 50];
-
-    // Make boundaries Walls
-    for x in 0..80 {
-        map[xy_idx(x, 0)] = TileType::Wall;
-        map[xy_idx(x, 49)] = TileType::Wall;
-    }
-    for y in 0..50 {
-        map[xy_idx(0, y)] = TileType::Wall;
-        map[xy_idx(79, y)] = TileType::Wall;
-    }
-
-    // Randomnly Splat Walls
-    // First, obtain Thread-local RNG
-    let mut rng = rltk::RandomNumberGenerator::new();
-
-    for _i in 0..400 {
-        let x = rng.roll_dice(1, 79);
-        let y = rng.roll_dice(1, 49);
-        let idx = xy_idx(x, y);
-
-        if idx != xy_idx(40, 25) {
-            map[idx] = TileType::Wall
-        }
-    }
-
-    // returns Map
-    map
-}
+use specs::prelude::*;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum TileType {
     Wall, Floor
 }
 
+#[derive(Default)]
 pub struct Map {
     pub tiles : Vec<TileType>,
     pub rooms : Vec<Rect>,
     pub width : i32,
-    pub height : i32
+    pub height : i32,
+    pub revealed_tiles : Vec<bool>,
+    pub visible_tiles : Vec<bool>
 }
 
 impl Map {
@@ -98,7 +57,9 @@ impl Map {
             tiles : vec![TileType::Wall; 80*50],
             rooms : Vec::new(),
             width : 80,
-            height: 50
+            height: 50,
+            revealed_tiles : vec![false; 80*50],
+            visible_tiles : vec![false; 80*50]
         };
 
         const MAX_ROOMS : i32 = 30;
@@ -107,7 +68,7 @@ impl Map {
 
         let mut rng = RandomNumberGenerator::new();
 
-        for i in 0..MAX_ROOMS {
+        for _i in 0..MAX_ROOMS {
             let w = rng.range(MIN_SIZE, MAX_SIZE);
             let h = rng.range(MIN_SIZE, MAX_SIZE);
             let x = rng.roll_dice(1, map.width - w - 1) - 1;
@@ -137,5 +98,51 @@ impl Map {
         }
 
         map
+    }
+}
+
+impl BaseMap for Map {
+    fn is_opaque(&self, idx:usize) -> bool {
+        self.tiles[idx] == TileType::Wall
+    }
+}
+
+impl Algorithm2D for Map {
+    fn dimensions(&self) -> Point {
+        Point::new(self.width, self.height)
+    }
+}
+
+pub fn draw_map(ecs: &World, ctx : &mut Rltk) {
+    let map = ecs.fetch::<Map>();
+
+    let mut y = 0;
+    let mut x = 0;
+    for (idx,tile) in map.tiles.iter().enumerate() {
+        // Render a tile depending upon the tile type
+
+        if map.revealed_tiles[idx] {
+            let glyph;
+            let mut fg;
+            match tile {
+                TileType::Floor => {
+                    glyph = rltk::to_cp437('.');
+                    fg = RGB::from_f32(0.0, 0.5, 0.5);
+                }
+                TileType::Wall => {
+                    glyph = rltk::to_cp437('#');
+                    fg = RGB::from_f32(0., 1.0, 0.);
+                }
+            }
+            if !map.visible_tiles[idx] { fg = fg.to_greyscale() }
+            ctx.set(x, y, fg, RGB::from_f32(0., 0., 0.), glyph);
+        }
+
+        // Move the coordinates
+        x += 1;
+        if x > 79 {
+            x = 0;
+            y += 1;
+        }
     }
 }
